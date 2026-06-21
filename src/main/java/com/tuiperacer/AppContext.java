@@ -4,7 +4,6 @@ import com.tuiperacer.model.RaceResult;
 import com.tuiperacer.network.RaceClient;
 import com.tuiperacer.network.RaceServer;
 import com.tuiperacer.persistence.RaceResultManager;
-import com.tuiperacer.service.LobbyService;
 import com.tuiperacer.service.RaceService;
 
 public class AppContext {
@@ -12,7 +11,6 @@ public class AppContext {
     private static final AppContext instance = new AppContext();
 
     private RaceService raceService;
-    private final LobbyService lobbyService;
     private final RaceResultManager raceResultManager;
     private RaceResult lastResult;
 
@@ -21,7 +19,6 @@ public class AppContext {
 
     private AppContext() {
         this.raceService = new RaceService();
-        this.lobbyService = new LobbyService();
         this.raceResultManager = new RaceResultManager();
     }
 
@@ -37,7 +34,6 @@ public class AppContext {
     }
 
     public RaceService getRaceService() { return raceService; }
-    public LobbyService getLobbyService() { return lobbyService; }
     public RaceResultManager getRaceResultManager() { return raceResultManager; }
 
     public RaceResult getLastResult() { return lastResult; }

@@ -91,8 +91,7 @@ O \textbf{TUIpeRacer2} é um jogo de corrida de digitação em Java/JavaFX onde 
 
 %% ---- camada de serviço ----
 \node[cls]  (rsvc)  at (0,   3.8) {RaceService};
-\node[cls]  (lsvc)  at (0,   2.3) {LobbyService};
-\node[cls]  (ctx)   at (0,   0.8) {AppContext «singleton»};
+\node[cls]  (ctx)   at (0,   2.3) {AppContext «singleton»};
 
 %% ---- rede ----
 \node[cls]  (srv)   at (-2.5, 0.8) {RaceServer};
@@ -128,9 +127,8 @@ O \textbf{TUIpeRacer2} é um jogo de corrida de digitação em Java/JavaFX onde 
 
 % AppContext compõe serviços e rede
 \draw[uses] (ctx) -- (rsvc);
-\draw[uses] (ctx) -- (lsvc);
-\draw[uses] (ctx.west)  -- (srv.south);
-\draw[uses] (ctx.east)  -- (cli.south);
+\draw[uses] (ctx.west)  -- (srv.north);
+\draw[uses] (ctx.east)  -- (cli.north);
 \draw[uses] (ctx.north east) -- (mgr.south west);
 
 \end{tikzpicture}
@@ -150,7 +148,7 @@ O \textbf{TUIpeRacer2} é um jogo de corrida de digitação em Java/JavaFX onde 
 
 \textbf{\texttt{Race}} — encapsula estado da corrida (\texttt{WAITING / RUNNING / FINISHED}) e a lista de jogadores.
 \textbf{\texttt{RaceResult}} (implementa \texttt{Persistable}) — agrega resultados individuais (\texttt{PlayerResult}) e suporta serialização.\\
-\textbf{\texttt{AppContext}} (\emph{Singleton}) — container de serviços: \texttt{RaceService}, \texttt{LobbyService}, \texttt{RaceResultManager}, \texttt{RaceServer}, \texttt{RaceClient}.
+\textbf{\texttt{AppContext}} (\emph{Singleton}) — container de serviços: \texttt{RaceService}, \texttt{RaceResultManager}, \texttt{RaceServer} e \texttt{RaceClient}.
 
 % ==================================================================
 \section*{4. Interfaces}
@@ -224,7 +222,7 @@ public void start() throws InvalidTextException {
 // SetupController.java (View)
 try {
     raceService.startRace();          // Service propaga
-    navigateToRace();
+    Main.navigateTo("race");
 } catch (InvalidTextException e) {
     new Alert(Alert.AlertType.ERROR, "Defina um texto para a corrida.").show();
 }
@@ -243,7 +241,6 @@ try {
 \texttt{ArrayList<Player>}                      & \texttt{Race}            & Lista polimórfica de jogadores \\
 \texttt{ArrayList<PlayerResult>}                & \texttt{RaceResult}      & Resultados individuais da corrida \\
 \texttt{ArrayList<RaceResult>}                  & \texttt{RaceResultManager} & Histórico persistido em arquivo \\
-\texttt{ArrayList<LobbyEntry>}                  & \texttt{LobbyService}    & Lobbies online disponíveis \\
 \texttt{ConcurrentHashMap<Integer,ClientHandler>} & \texttt{RaceServer}    & Clientes TCP thread-safe \\
 \texttt{HashMap<String,PlayerPane>}             & \texttt{RaceController}  & Lookup de painel UI por nome \\
 \texttt{ConcurrentLinkedQueue<RemoteChar>}      & \texttt{RaceController}  & Fila não-bloqueante de eventos de rede \\
@@ -260,12 +257,12 @@ O \texttt{ArrayList<Player>} em \texttt{Race} é central: permite iterar polimor
 \centering
 \begin{minipage}{0.48\textwidth}
     \centering
-    \fbox{\includegraphics[width=\textwidth,height=3.5cm,keepaspectratio]{screen_menu.png}}
+    \fbox{\includegraphics[width=\textwidth,height=3.5cm,keepaspectratio]{screen_menu.jpeg}}
     \caption*{\small Menu Principal}
 \end{minipage}\hfill
 \begin{minipage}{0.48\textwidth}
     \centering
-    \fbox{\includegraphics[width=\textwidth,height=3.5cm,keepaspectratio]{screen_setup.png}}
+    \fbox{\includegraphics[width=\textwidth,height=3.5cm,keepaspectratio]{screen_setup.jpeg}}
     \caption*{\small Configuração de Corrida}
 \end{minipage}
 \end{figure}
@@ -274,12 +271,12 @@ O \texttt{ArrayList<Player>} em \texttt{Race} é central: permite iterar polimor
 \centering
 \begin{minipage}{0.48\textwidth}
     \centering
-    \fbox{\includegraphics[width=\textwidth,height=3.5cm,keepaspectratio]{screen_race.png}}
+    \fbox{\includegraphics[width=\textwidth,height=3.5cm,keepaspectratio]{screen_race.jpeg}}
     \caption*{\small Corrida em Andamento}
 \end{minipage}\hfill
 \begin{minipage}{0.48\textwidth}
     \centering
-    \fbox{\includegraphics[width=\textwidth,height=3.5cm,keepaspectratio]{screen_results.png}}
+    \fbox{\includegraphics[width=\textwidth,height=3.5cm,keepaspectratio]{screen_results.jpeg}}
     \caption*{\small Tela de Resultados}
 \end{minipage}
 \end{figure}
