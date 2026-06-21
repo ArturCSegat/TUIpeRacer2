@@ -1,0 +1,349 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{tikz-uml}
+
+\geometry{top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm}
+
+\definecolor{codeblue}{rgb}{0.13,0.29,0.53}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codegreen}{rgb}{0.0,0.5,0.0}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+
+\lstdefinestyle{javastyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{codeblue}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{orange},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showstringspaces=false,
+    tabsize=4,
+    language=Java
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{TUIpeRacer2}
+\lhead{Relatório Técnico}
+\rfoot{\thepage}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=codeblue,
+    urlcolor=codeblue
+}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{\thesection\quad}
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{\thesubsection\quad}
+
+% ------------------------------------------------------------------
+\begin{document}
+
+% ==================== CAPA ====================
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    {\Large\bfseries Universidade / Instituição\par}
+    \vspace{0.5cm}
+    {\large Disciplina de Programação Orientada a Objetos\par}
+    \vspace{3cm}
+    {\Huge\bfseries TUIpeRacer2\par}
+    \vspace{0.5cm}
+    {\large Jogo de Corrida de Digitação — Relatório Técnico\par}
+    \vspace{3cm}
+    {\large Artur C. Segat\par}
+    \vspace{1cm}
+    {\large \today\par}
+    \vfill
+\end{titlepage}
+
+% ==================== SUMÁRIO ====================
+\tableofcontents
+\newpage
+
+% ==================================================================
+\section{Visão Geral do Sistema}
+
+O \textbf{TUIpeRacer2} é um jogo de corrida de digitação desenvolvido em Java com interface gráfica JavaFX. O objetivo é que um ou mais jogadores digitem um texto predefinido o mais rápido e corretamente possível, competindo em tempo real. O sistema suporta três modalidades de jogador:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Local} — jogador humano na mesma máquina;
+    \item \textbf{CPU} — oponente controlado por inteligência artificial com WPM configurável;
+    \item \textbf{TCP} — jogador remoto conectado via protocolo TCP/IP customizado.
+\end{itemize}
+
+A arquitetura segue o padrão \textbf{MVC} (Model-View-Controller), com camadas bem definidas de modelo, serviços, persistência, rede e interface gráfica.
+
+% ==================================================================
+\section{Diagrama UML Simplificado}
+
+O diagrama a seguir apresenta as principais classes do sistema e seus relacionamentos.
+
+\begin{figure}[H]
+\centering
+% Diagrama UML em TikZ (sem pacote tikz-uml para máxima compatibilidade)
+\begin{tikzpicture}[
+    class/.style={draw, rectangle, minimum width=4cm, minimum height=0.7cm, fill=blue!8, font=\small\ttfamily},
+    interface/.style={draw, rectangle, minimum width=4cm, minimum height=0.7cm, fill=green!10, font=\small\ttfamily, dashed},
+    exc/.style={draw, rectangle, minimum width=3.5cm, minimum height=0.7cm, fill=red!8, font=\small\ttfamily},
+    arrow/.style={->, >=stealth, thick},
+    impl/.style={->, >=open triangle 60, dashed, thick},
+    inherit/.style={->, >=open triangle 60, thick}
+]
+
+% Interfaces
+\node[interface] (typeable) at (0, 8)   {\guillemotleft interface\guillemotright\ Typeable};
+\node[interface] (persistable) at (6, 8) {\guillemotleft interface\guillemotright\ Persistable};
+
+% Player hierarchy
+\node[class] (player) at (0, 6)         {Player (abstract)};
+\node[class] (local)  at (-3.5, 4)      {PlayerLocal};
+\node[class] (cpu)    at (0, 4)         {PlayerCpu};
+\node[class] (tcp)    at (3.5, 4)       {PlayerTcp};
+
+% Race / Result
+\node[class] (race)   at (6, 6)         {Race};
+\node[class] (result) at (6, 4)         {RaceResult};
+\node[class] (presult)at (6, 2)         {PlayerResult};
+
+% Services
+\node[class] (rsvc)   at (-4, 1)        {RaceService};
+\node[class] (lsvc)   at (-4, -0.5)     {LobbyService};
+\node[class] (ctx)    at (-4, -2)       {AppContext};
+
+% Persistence
+\node[class] (mgr)    at (3, 0.5)       {RaceResultManager};
+
+% Network
+\node[class] (srv)    at (-0.5, -1.5)   {RaceServer};
+\node[class] (cli)    at (3, -1.5)      {RaceClient};
+
+% Arrows
+\draw[impl]    (player)  -- (typeable);
+\draw[inherit] (local)   -- (player);
+\draw[inherit] (cpu)     -- (player);
+\draw[inherit] (tcp)     -- (player);
+
+\draw[arrow]   (race)    -- node[right,font=\tiny]{uses} (player);
+\draw[arrow]   (race)    -- (result);
+\draw[arrow]   (result)  -- (presult);
+\draw[impl]    (result)  -| (persistable);
+\draw[impl]    (mgr)     -- (persistable);
+
+\draw[arrow]   (rsvc)    -- (race);
+\draw[arrow]   (ctx)     -- (rsvc);
+\draw[arrow]   (ctx)     -- (lsvc);
+
+\end{tikzpicture}
+\caption{Diagrama UML simplificado das principais classes do TUIpeRacer2}
+\end{figure}
+
+% ==================================================================
+\section{Hierarquia de Classes}
+
+\subsection{Camada de Modelo (\texttt{model})}
+
+\textbf{\texttt{Player} (classe abstrata)} é a raiz da hierarquia de jogadores. Ela implementa a interface \texttt{Typeable} e concentra os atributos e comportamentos comuns como nome, texto a digitar, texto já digitado, métricas de WPM e acurácia, e marcação de início/fim de corrida.
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{\texttt{PlayerLocal}} — especialização para jogador humano local. Implementa \texttt{processInput(char)} validando cada caractere digitado contra o esperado e lançando \texttt{InvalidInputException} em caso de erro.
+    \item \textbf{\texttt{PlayerCpu}} — jogador artificial com WPM-alvo configurável e simulação de jitter. Possui o método \texttt{autoTick(long nowMs)} que dispara automaticamente a próxima digitação.
+    \item \textbf{\texttt{PlayerTcp}} — representação local de um jogador remoto. Recebe os caracteres via rede e os aplica internamente.
+\end{itemize}
+
+\textbf{\texttt{Race}} encapsula o estado completo de uma corrida: coleção de jogadores, estado (\texttt{RaceState}: \texttt{WAITING}, \texttt{RUNNING}, \texttt{FINISHED}) e resultado final.
+
+\textbf{\texttt{RaceResult}} (implementa \texttt{Persistable}) agrega uma lista de \texttt{PlayerResult}, metadados da corrida e suporta serialização para arquivo.
+
+\subsection{Camada de Serviço (\texttt{service})}
+
+\textbf{\texttt{RaceService}} delega operações de alto nível à instância de \texttt{Race} (criar corrida, adicionar jogadores, iniciar, finalizar, editar nome).
+
+\textbf{\texttt{LobbyService}} mantém a lista de entradas de lobby online (\texttt{LobbyEntry}), com operações de adição, remoção e limpeza.
+
+\textbf{\texttt{AppContext}} é um \emph{Singleton} que centraliza todas as dependências da aplicação (\texttt{RaceService}, \texttt{LobbyService}, \texttt{RaceResultManager}, \texttt{RaceServer}, \texttt{RaceClient}).
+
+\subsection{Camada de Rede (\texttt{network})}
+
+\textbf{\texttt{RaceServer}} gerencia conexões TCP de múltiplos clientes usando um \texttt{ConcurrentHashMap} para o mapa de \texttt{ClientHandler}. Cada handler roda em thread separada via \texttt{ExecutorService}.
+
+\textbf{\texttt{RaceClient}} conecta ao servidor, envia o nome do jogador e os caracteres digitados, e processa as mensagens recebidas via callbacks.
+
+% ==================================================================
+\section{Interfaces Utilizadas}
+
+O sistema define duas interfaces no pacote \texttt{com.tuiperacer.interfaces}:
+
+\subsection{\texttt{Typeable}}
+Define o contrato de digitação para qualquer tipo de jogador:
+
+\begin{lstlisting}[style=javastyle, caption={Interface Typeable}]
+public interface Typeable {
+    void processInput(char c) throws InvalidInputException;
+    boolean isFinished();
+    double getProgress();   // 0.0 a 1.0
+    double getWPM();        // palavras por minuto
+    double getAccuracy();   // porcentagem 0-100
+}
+\end{lstlisting}
+
+Implementada por \texttt{Player} (e indiretamente por todas as suas subclasses). O polimorfismo dessa interface permite que \texttt{Race} trate qualquer tipo de jogador de forma uniforme.
+
+\subsection{\texttt{Persistable}}
+Define o contrato de serialização/desserialização:
+
+\begin{lstlisting}[style=javastyle, caption={Interface Persistable}]
+public interface Persistable {
+    String serialize();
+    void deserialize(String data) throws FileLoadException;
+}
+\end{lstlisting}
+
+Implementada por \texttt{RaceResult} e \texttt{RaceResultManager}, garantindo que o histórico de corridas possa ser salvo e recarregado do disco.
+
+% ==================================================================
+\section{Exceções Próprias}
+
+Todas as exceções estão no pacote \texttt{com.tuiperacer.exception}. O sistema distingue exceções \textbf{verificadas} (\emph{checked}) de exceções de \textbf{tempo de execução} (\emph{unchecked}):
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Exceção} & \textbf{Tipo} & \textbf{Contexto de lançamento} \\
+\midrule
+\texttt{FileLoadException} & Checked & Falha na leitura de arquivos de texto ou histórico \\
+\texttt{PlayerNotFoundException} & Checked & Busca de jogador inexistente na corrida \\
+\texttt{DuplicatePlayerException} & Checked & Tentativa de adicionar jogador com nome já existente \\
+\texttt{ConnectionException} & Checked & Falha na conexão TCP (host/porta inválidos ou inacessíveis) \\
+\texttt{RaceAlreadyStartedException} & Runtime & Modificação de corrida já iniciada \\
+\texttt{InvalidInputException} & Runtime & Caractere digitado diferente do esperado \\
+\texttt{InvalidTextException} & Checked & Texto da corrida vazio ou inválido \\
+\bottomrule
+\end{tabularx}
+\caption{Exceções customizadas do sistema}
+\end{table}
+
+% ==================================================================
+\section{Fluxo com Lançamento e Tratamento de Exceção em Camadas}
+
+O cenário abaixo ilustra o tratamento de exceção atravessando múltiplas camadas, desde a entrada do usuário até a interface gráfica:
+
+\textbf{Cenário:} jogador tenta iniciar uma corrida sem texto definido.
+
+\begin{enumerate}[leftmargin=*, label=\arabic{*}.]
+    \item \textbf{View} (\texttt{SetupController}) — o usuário clica em ``Iniciar'' sem preencher o campo de texto e aciona o método \texttt{onStartRace()}.
+
+    \item \textbf{Service} (\texttt{RaceService.startRace()}) — chama \texttt{Race.start()}, que verifica se o texto é nulo ou vazio e lança \texttt{InvalidTextException}:
+
+\begin{lstlisting}[style=javastyle]
+// Race.java
+public void start() throws InvalidTextException {
+    if (text == null || text.isBlank())
+        throw new InvalidTextException("Texto da corrida nao pode ser vazio.");
+    state = RaceState.RUNNING;
+    startTime = System.currentTimeMillis();
+}
+\end{lstlisting}
+
+    \item \textbf{Service} — \texttt{RaceService} propaga a exceção sem tratá-la (relançamento implícito via assinatura do método).
+
+    \item \textbf{View} (\texttt{SetupController}) — captura \texttt{InvalidTextException} e exibe uma mensagem de erro ao usuário via \texttt{Alert}:
+
+\begin{lstlisting}[style=javastyle]
+// SetupController.java
+try {
+    raceService.startRace();
+    navigateToRace();
+} catch (InvalidTextException e) {
+    Alert alert = new Alert(Alert.AlertType.ERROR);
+    alert.setContentText("Por favor, defina um texto para a corrida.");
+    alert.show();
+}
+\end{lstlisting}
+\end{enumerate}
+
+Outro fluxo relevante envolve \texttt{FileLoadException}: ao carregar um arquivo de texto via \texttt{TextFileLoader}, a exceção é capturada na \texttt{View} e apresentada ao usuário, sem comprometer o estado do modelo.
+
+% ==================================================================
+\section{Coleção Utilizada}
+
+O sistema faz uso extensivo de coleções da API Java. A tabela abaixo destaca as principais:
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Coleção} & \textbf{Localização} & \textbf{Finalidade} \\
+\midrule
+\texttt{ArrayList<Player>} & \texttt{Race} & Lista polimórfica de jogadores da corrida \\
+\texttt{ArrayList<PlayerResult>} & \texttt{RaceResult} & Resultados individuais de cada jogador \\
+\texttt{ArrayList<RaceResult>} & \texttt{RaceResultManager} & Histórico persistido de corridas anteriores \\
+\texttt{ArrayList<LobbyEntry>} & \texttt{LobbyService} & Entradas de lobby online disponíveis \\
+\texttt{ConcurrentHashMap<Integer,ClientHandler>} & \texttt{RaceServer} & Mapa thread-safe de clientes conectados \\
+\texttt{ConcurrentHashMap<Integer,String>} & \texttt{RaceServer} & Mapa thread-safe de nomes por slot \\
+\texttt{HashMap<String,PlayerPane>} & \texttt{RaceController} & Lookup rápido de painel UI por nome \\
+\texttt{ConcurrentLinkedQueue<RemoteChar>} & \texttt{RaceController} & Fila não-bloqueante de eventos de rede \\
+\bottomrule
+\end{tabularx}
+\caption{Principais coleções utilizadas no sistema}
+\end{table}
+
+\textbf{Destaque — \texttt{ArrayList<Player>} em \texttt{Race}:} esta coleção é o coração do modelo. Por armazenar referências polimórficas a \texttt{Player}, o loop de jogo pode iterar sobre todos os jogadores e chamar \texttt{getProgress()}, \texttt{isFinished()} e \texttt{getWPM()} de forma uniforme, independentemente do tipo concreto (Local, CPU ou TCP).
+
+\textbf{Destaque — \texttt{ConcurrentLinkedQueue} em \texttt{RaceController}:} desacopla a thread de rede (que escreve caracteres recebidos na fila) do \texttt{AnimationTimer} JavaFX (que consome a fila a cada frame). Isso evita condições de corrida sem bloqueios desnecessários.
+
+% ==================================================================
+\section{Prints da Interface Gráfica}
+
+\textit{[Esta seção será preenchida com os prints da interface após a execução da aplicação.]}
+
+\begin{figure}[H]
+    \centering
+    \fbox{\rule{0pt}{5cm}\rule{0.9\textwidth}{0pt}}
+    \caption{Tela de Menu Principal}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \fbox{\rule{0pt}{5cm}\rule{0.9\textwidth}{0pt}}
+    \caption{Tela de Configuração de Corrida}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \fbox{\rule{0pt}{5cm}\rule{0.9\textwidth}{0pt}}
+    \caption{Tela de Corrida em Andamento}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \fbox{\rule{0pt}{5cm}\rule{0.9\textwidth}{0pt}}
+    \caption{Tela de Resultados}
+\end{figure}
+
+% ==================================================================
+\end{document}
