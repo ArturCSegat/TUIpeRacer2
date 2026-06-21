@@ -66,56 +66,75 @@ O \textbf{TUIpeRacer2} é um jogo de corrida de digitação em Java/JavaFX onde 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
-    cls/.style={draw, rectangle, fill=blue!7, font=\small\ttfamily, minimum height=0.7cm, minimum width=3.6cm, inner sep=5pt},
-    ifc/.style={draw, rectangle, dashed, fill=green!8, font=\small\ttfamily, minimum height=0.7cm, minimum width=3.6cm, inner sep=5pt},
-    arr/.style={->, >=stealth, thick},
-    inh/.style={->, >=open triangle 60, thick},
-    impl/.style={->, >=open triangle 60, dashed, thick},
+    cls/.style  = {draw, fill=blue!6,  font=\small\sffamily, minimum height=0.65cm, minimum width=3.3cm, inner sep=4pt},
+    abst/.style = {draw, fill=blue!6,  font=\small\sffamily\itshape, minimum height=0.65cm, minimum width=3.3cm, inner sep=4pt},
+    ifc/.style  = {draw, dashed, fill=green!8, font=\scriptsize\sffamily, minimum height=0.65cm, minimum width=3.3cm, inner sep=4pt},
+    ext/.style  = {->, >=open triangle 60, thick},           % herança
+    impl/.style = {->, >=open triangle 60, thick, dashed},   % implementação
+    uses/.style = {->, >=stealth, thick},                    % uso/associação
+    agg/.style  = {->, >=diamond, thick},                    % agregação
 ]
-% Interfaces (topo)
-\node[ifc] (typeable)    at (0,   8)   {\guillemotleft interface\guillemotright\ Typeable};
-\node[ifc] (persistable) at (8,   8)   {\guillemotleft interface\guillemotright\ Persistable};
 
-% Player hierarchy
-\node[cls] (player)  at (0,   6)   {Player (abstract)};
-\node[cls] (local)   at (-4,  4)   {PlayerLocal};
-\node[cls] (cpu)     at (0,   4)   {PlayerCpu};
-\node[cls] (tcp)     at (4,   4)   {PlayerTcp};
+%% ---- coluna esquerda: hierarquia Player ----
+\node[ifc]  (typeable)  at (0, 8.5) {«interface» Typeable};
+\node[abst] (player)    at (0, 7)   {Player};
+\node[cls]  (local)     at (-2.5, 5.3) {PlayerLocal};
+\node[cls]  (cpu)       at (0,    5.3) {PlayerCpu};
+\node[cls]  (tcp)       at (2.5,  5.3) {PlayerTcp};
 
-% Race / Result
-\node[cls] (race)    at (8,   6)   {Race};
-\node[cls] (result)  at (8,   4)   {RaceResult};
-\node[cls] (presult) at (8,   2)   {PlayerResult};
+%% ---- coluna direita: corrida e persistência ----
+\node[ifc]  (persistable) at (8.5, 8.5) {«interface» Persistable};
+\node[cls]  (race)        at (8.5, 7)   {Race};
+\node[cls]  (result)      at (8.5, 5.3) {RaceResult};
+\node[cls]  (presult)     at (8.5, 3.8) {PlayerResult};
+\node[cls]  (mgr)         at (8.5, 2.3) {RaceResultManager};
 
-% Services
-\node[cls] (rsvc)    at (-4,  1.5) {RaceService};
-\node[cls] (ctx)     at (-4, -0.2) {AppContext};
+%% ---- camada de serviço ----
+\node[cls]  (rsvc)  at (0,   3.8) {RaceService};
+\node[cls]  (lsvc)  at (0,   2.3) {LobbyService};
+\node[cls]  (ctx)   at (0,   0.8) {AppContext «singleton»};
 
-% Network
-\node[cls] (srv)     at (0,  -0.2) {RaceServer};
-\node[cls] (cli)     at (4,  -0.2) {RaceClient};
+%% ---- rede ----
+\node[cls]  (srv)   at (-2.5, 0.8) {RaceServer};
+\node[cls]  (cli)   at ( 2.5, 0.8) {RaceClient};
 
-% Persistence
-\node[cls] (mgr)     at (8,  -0.2) {RaceResultManager};
+%% ======= SETAS =======
 
-% Relations
-\draw[impl]  (player)  -- (typeable);
-\draw[inh]   (local)   -- (player);
-\draw[inh]   (cpu)     -- (player);
-\draw[inh]   (tcp)     -- (player);
+% Player implementa Typeable
+\draw[impl] (player) -- (typeable);
 
-\draw[arr]   (race) -- node[above, font=\scriptsize]{usa} (player);
-\draw[arr]   (race)    -- (result);
-\draw[arr]   (result)  -- (presult);
-\draw[impl]  (result.north) -- ++(0,0.5) -| (persistable.south);
-\draw[impl]  (mgr)     -- (persistable);
+% subclasses herdam Player
+\draw[ext] (local) -- (player);
+\draw[ext] (cpu)   -- (player);
+\draw[ext] (tcp)   -- (player);
 
-\draw[arr]   (rsvc)    -- (race);
-\draw[arr]   (ctx)     -- (rsvc);
-\draw[arr]   (ctx)     -- (srv);
-\draw[arr]   (ctx.east) -- (cli);
+% Race usa (agrega) Player
+\draw[uses] (race.west) -- node[above,font=\scriptsize]{usa *} (player.east);
+
+% RaceResult implementa Persistable
+\draw[impl] (result.north) -- ++(0,0.45) -| (persistable.south);
+
+% RaceResultManager implementa Persistable
+\draw[impl] (mgr.north) -- ++(0,0.45) -- ++(2.5,0) -- ++(0, 4.2) -- (persistable.east);
+
+% Race agrega RaceResult
+\draw[agg] (race) -- node[right,font=\scriptsize]{1} (result);
+
+% RaceResult agrega PlayerResult
+\draw[agg] (result) -- node[right,font=\scriptsize]{*} (presult);
+
+% RaceService usa Race
+\draw[uses] (rsvc.north east) -- (race.south west);
+
+% AppContext compõe serviços e rede
+\draw[uses] (ctx) -- (rsvc);
+\draw[uses] (ctx) -- (lsvc);
+\draw[uses] (ctx.west)  -- (srv.south);
+\draw[uses] (ctx.east)  -- (cli.south);
+\draw[uses] (ctx.north east) -- (mgr.south west);
+
 \end{tikzpicture}
-\caption{Diagrama UML simplificado — principais classes e relacionamentos}
+\caption{Diagrama UML — hierarquia, interfaces e relacionamentos}
 \end{figure}
 
 % ==================================================================
