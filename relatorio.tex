@@ -66,47 +66,54 @@ O \textbf{TUIpeRacer2} é um jogo de corrida de digitação em Java/JavaFX onde 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
-    cls/.style={draw, rectangle, fill=blue!7, font=\scriptsize\ttfamily, minimum height=0.55cm, minimum width=3.2cm, inner sep=3pt},
-    ifc/.style={draw, rectangle, dashed, fill=green!8, font=\scriptsize\ttfamily, minimum height=0.55cm, minimum width=3.2cm, inner sep=3pt},
+    cls/.style={draw, rectangle, fill=blue!7, font=\small\ttfamily, minimum height=0.7cm, minimum width=3.6cm, inner sep=5pt},
+    ifc/.style={draw, rectangle, dashed, fill=green!8, font=\small\ttfamily, minimum height=0.7cm, minimum width=3.6cm, inner sep=5pt},
     arr/.style={->, >=stealth, thick},
     inh/.style={->, >=open triangle 60, thick},
     impl/.style={->, >=open triangle 60, dashed, thick},
-    scale=0.92
 ]
-% Interfaces
-\node[ifc] (typeable)   at (0, 5)    {\guillemotleft interface\guillemotright\ Typeable};
-\node[ifc] (persistable)at (6.5, 5)  {\guillemotleft interface\guillemotright\ Persistable};
-% Player hierarchy
-\node[cls] (player) at (0, 3.5)      {Player (abstract)};
-\node[cls] (local)  at (-3.2, 2)     {PlayerLocal};
-\node[cls] (cpu)    at (0, 2)        {PlayerCpu};
-\node[cls] (tcp)    at (3.2, 2)      {PlayerTcp};
-% Race / Result
-\node[cls] (race)   at (6.5, 3.5)    {Race};
-\node[cls] (result) at (6.5, 2)      {RaceResult};
-\node[cls] (presult)at (6.5, 0.7)    {PlayerResult};
-% Services / Context
-\node[cls] (rsvc)   at (-3.2, 0.5)   {RaceService};
-\node[cls] (ctx)    at (-3.2, -0.7)  {AppContext (Singleton)};
-% Network
-\node[cls] (srv)    at (0.2, -0.7)   {RaceServer};
-\node[cls] (cli)    at (3.5, -0.7)   {RaceClient};
-% Persistence
-\node[cls] (mgr)    at (6.5, -0.7)   {RaceResultManager};
+% Interfaces (topo)
+\node[ifc] (typeable)    at (0,   8)   {\guillemotleft interface\guillemotright\ Typeable};
+\node[ifc] (persistable) at (8,   8)   {\guillemotleft interface\guillemotright\ Persistable};
 
-\draw[impl]  (player) -- (typeable);
-\draw[inh]   (local)  -- (player);
-\draw[inh]   (cpu)    -- (player);
-\draw[inh]   (tcp)    -- (player);
-\draw[arr]   (race)   -- node[right,font=\tiny]{usa} (player);
-\draw[arr]   (race)   -- (result);
-\draw[arr]   (result) -- (presult);
-\draw[impl]  (result.north east) -- ++(0,0.3) -| (persistable);
-\draw[impl]  (mgr)    -- (persistable);
-\draw[arr]   (rsvc)   -- (race);
-\draw[arr]   (ctx)    -- (rsvc);
-\draw[arr]   (ctx)    -- (srv);
-\draw[arr]   (ctx)    -- (cli);
+% Player hierarchy
+\node[cls] (player)  at (0,   6)   {Player (abstract)};
+\node[cls] (local)   at (-4,  4)   {PlayerLocal};
+\node[cls] (cpu)     at (0,   4)   {PlayerCpu};
+\node[cls] (tcp)     at (4,   4)   {PlayerTcp};
+
+% Race / Result
+\node[cls] (race)    at (8,   6)   {Race};
+\node[cls] (result)  at (8,   4)   {RaceResult};
+\node[cls] (presult) at (8,   2)   {PlayerResult};
+
+% Services
+\node[cls] (rsvc)    at (-4,  1.5) {RaceService};
+\node[cls] (ctx)     at (-4, -0.2) {AppContext};
+
+% Network
+\node[cls] (srv)     at (0,  -0.2) {RaceServer};
+\node[cls] (cli)     at (4,  -0.2) {RaceClient};
+
+% Persistence
+\node[cls] (mgr)     at (8,  -0.2) {RaceResultManager};
+
+% Relations
+\draw[impl]  (player)  -- (typeable);
+\draw[inh]   (local)   -- (player);
+\draw[inh]   (cpu)     -- (player);
+\draw[inh]   (tcp)     -- (player);
+
+\draw[arr]   (race) -- node[above, font=\scriptsize]{usa} (player);
+\draw[arr]   (race)    -- (result);
+\draw[arr]   (result)  -- (presult);
+\draw[impl]  (result.north) -- ++(0,0.5) -| (persistable.south);
+\draw[impl]  (mgr)     -- (persistable);
+
+\draw[arr]   (rsvc)    -- (race);
+\draw[arr]   (ctx)     -- (rsvc);
+\draw[arr]   (ctx)     -- (srv);
+\draw[arr]   (ctx.east) -- (cli);
 \end{tikzpicture}
 \caption{Diagrama UML simplificado — principais classes e relacionamentos}
 \end{figure}
