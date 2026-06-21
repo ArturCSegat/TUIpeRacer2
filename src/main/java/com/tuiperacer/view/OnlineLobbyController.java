@@ -83,13 +83,31 @@ public class OnlineLobbyController {
     private void startServer() {
         try {
             String text = TextFileLoader.loadBuiltinText(20);
-            int port = 3000;
-            server = new RaceServer(port, text);
+
+            RaceServer started = null;
+            int boundPort = -1;
+            for (int port = 3000; port <= 3010; port++) {
+                try {
+                    RaceServer candidate = new RaceServer(port, text);
+                    candidate.start();
+                    started = candidate;
+                    boundPort = port;
+                    break;
+                } catch (ConnectionException ignored) {}
+            }
+
+            if (started == null) {
+                showAlert(Alert.AlertType.ERROR, "Erro de conexão",
+                        "Não foi possível abrir nenhuma porta entre 3000 e 3010.");
+                return;
+            }
+
+            server = started;
+            final int finalPort = boundPort;
             server.setOnPlayerJoined(name -> {
                 playerCountLabel.setText("Jogadores conectados: " + server.getClientCount());
                 lobbyListView.getItems().add(name);
             });
-            server.start();
 
             String ip;
             try {
@@ -97,11 +115,9 @@ public class OnlineLobbyController {
             } catch (UnknownHostException e) {
                 ip = "127.0.0.1";
             }
-            hostInfoLabel.setText("Servidor em: " + ip + ":" + port);
+            hostInfoLabel.setText("Servidor em: " + ip + ":" + finalPort);
             statusLabel.setText("Aguardando jogadores...");
 
-        } catch (ConnectionException e) {
-            showAlert(Alert.AlertType.ERROR, "Erro de conexão", e.getMessage());
         } catch (FileLoadException e) {
             showAlert(Alert.AlertType.ERROR, "Erro ao carregar texto", e.getMessage());
         }
