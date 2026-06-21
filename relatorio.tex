@@ -1,0 +1,287 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{multicol}
+\usepackage{tikz}
+
+\geometry{top=1.8cm, bottom=1.8cm, left=2.2cm, right=2cm}
+\setlength{\parskip}{3pt}
+
+\definecolor{codeblue}{rgb}{0.13,0.29,0.53}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codegreen}{rgb}{0.0,0.45,0.0}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+
+\lstdefinestyle{javastyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{codeblue}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{orange},
+    basicstyle=\ttfamily\scriptsize,
+    breaklines=true,
+    keepspaces=true,
+    numbers=left,
+    numbersep=4pt,
+    showstringspaces=false,
+    tabsize=4,
+    language=Java,
+    xleftmargin=1em,
+    framexleftmargin=1em,
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small TUIpeRacer2 — Relatório Técnico}
+\lhead{\small Artur C. Segat}
+\rfoot{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+
+{\centering\Large\bfseries TUIpeRacer2 — Relatório Técnico\par}
+{\centering\small Jogo de Corrida de Digitação em JavaFX\par}
+\vspace{4pt}\hrule\vspace{8pt}
+
+% ==================================================================
+\section*{1. Visão Geral}
+
+O \textbf{TUIpeRacer2} é um jogo de corrida de digitação em Java/JavaFX onde jogadores competem digitando um texto o mais rápido e corretamente possível. Suporta três tipos de jogador: \textbf{Local} (humano), \textbf{CPU} (IA com WPM configurável) e \textbf{TCP} (remoto via rede). A arquitetura segue o padrão \textbf{MVC} com camadas de modelo, serviço, persistência, rede e view.
+
+% ==================================================================
+\section*{2. Diagrama UML Simplificado}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    cls/.style  = {draw, fill=blue!6,  font=\small\sffamily, minimum height=0.65cm, minimum width=3.3cm, inner sep=4pt},
+    abst/.style = {draw, fill=blue!6,  font=\small\sffamily\itshape, minimum height=0.65cm, minimum width=3.3cm, inner sep=4pt},
+    ifc/.style  = {draw, dashed, fill=green!8, font=\scriptsize\sffamily, minimum height=0.65cm, minimum width=3.3cm, inner sep=4pt},
+    ext/.style  = {->, >=open triangle 60, thick},           % herança
+    impl/.style = {->, >=open triangle 60, thick, dashed},   % implementação
+    uses/.style = {->, >=stealth, thick},                    % uso/associação
+    agg/.style  = {->, >=diamond, thick},                    % agregação
+]
+
+%% ---- coluna esquerda: hierarquia Player ----
+\node[ifc]  (typeable)  at (0, 8.5) {«interface» Typeable};
+\node[abst] (player)    at (0, 7)   {Player};
+\node[cls]  (local)     at (-2.5, 5.3) {PlayerLocal};
+\node[cls]  (cpu)       at (0,    5.3) {PlayerCpu};
+\node[cls]  (tcp)       at (2.5,  5.3) {PlayerTcp};
+
+%% ---- coluna direita: corrida e persistência ----
+\node[ifc]  (persistable) at (8.5, 8.5) {«interface» Persistable};
+\node[cls]  (race)        at (8.5, 7)   {Race};
+\node[cls]  (result)      at (8.5, 5.3) {RaceResult};
+\node[cls]  (presult)     at (8.5, 3.8) {PlayerResult};
+\node[cls]  (mgr)         at (8.5, 2.3) {RaceResultManager};
+
+%% ---- camada de serviço ----
+\node[cls]  (rsvc)  at (0,   3.8) {RaceService};
+\node[cls]  (lsvc)  at (0,   2.3) {LobbyService};
+\node[cls]  (ctx)   at (0,   0.8) {AppContext «singleton»};
+
+%% ---- rede ----
+\node[cls]  (srv)   at (-2.5, 0.8) {RaceServer};
+\node[cls]  (cli)   at ( 2.5, 0.8) {RaceClient};
+
+%% ======= SETAS =======
+
+% Player implementa Typeable
+\draw[impl] (player) -- (typeable);
+
+% subclasses herdam Player
+\draw[ext] (local) -- (player);
+\draw[ext] (cpu)   -- (player);
+\draw[ext] (tcp)   -- (player);
+
+% Race usa (agrega) Player
+\draw[uses] (race.west) -- node[above,font=\scriptsize]{usa *} (player.east);
+
+% RaceResult implementa Persistable
+\draw[impl] (result.north) -- ++(0,0.45) -| (persistable.south);
+
+% RaceResultManager implementa Persistable
+\draw[impl] (mgr.north) -- ++(0,0.45) -- ++(2.5,0) -- ++(0, 4.2) -- (persistable.east);
+
+% Race agrega RaceResult
+\draw[agg] (race) -- node[right,font=\scriptsize]{1} (result);
+
+% RaceResult agrega PlayerResult
+\draw[agg] (result) -- node[right,font=\scriptsize]{*} (presult);
+
+% RaceService usa Race
+\draw[uses] (rsvc.north east) -- (race.south west);
+
+% AppContext compõe serviços e rede
+\draw[uses] (ctx) -- (rsvc);
+\draw[uses] (ctx) -- (lsvc);
+\draw[uses] (ctx.west)  -- (srv.south);
+\draw[uses] (ctx.east)  -- (cli.south);
+\draw[uses] (ctx.north east) -- (mgr.south west);
+
+\end{tikzpicture}
+\caption{Diagrama UML — hierarquia, interfaces e relacionamentos}
+\end{figure}
+
+% ==================================================================
+\section*{3. Hierarquia de Classes}
+
+\textbf{\texttt{Player} (abstrata, implementa \texttt{Typeable})} — raiz da hierarquia. Centraliza atributos comuns: texto a digitar, texto digitado, WPM, acurácia e timestamps. Define \texttt{processInput(char)} como abstrato.
+
+\begin{itemize}[leftmargin=*, itemsep=1pt, topsep=2pt]
+    \item \texttt{PlayerLocal} — jogador humano; valida o caractere digitado e lança \texttt{InvalidInputException} em caso de erro.
+    \item \texttt{PlayerCpu} — IA com WPM-alvo e jitter; auto-digita via \texttt{autoTick(long nowMs)}.
+    \item \texttt{PlayerTcp} — espelho de jogador remoto; recebe caracteres da rede.
+\end{itemize}
+
+\textbf{\texttt{Race}} — encapsula estado da corrida (\texttt{WAITING / RUNNING / FINISHED}) e a lista de jogadores.
+\textbf{\texttt{RaceResult}} (implementa \texttt{Persistable}) — agrega resultados individuais (\texttt{PlayerResult}) e suporta serialização.\\
+\textbf{\texttt{AppContext}} (\emph{Singleton}) — container de serviços: \texttt{RaceService}, \texttt{LobbyService}, \texttt{RaceResultManager}, \texttt{RaceServer}, \texttt{RaceClient}.
+
+% ==================================================================
+\section*{4. Interfaces}
+
+\begin{multicols}{2}
+\textbf{\texttt{Typeable}} — contrato de digitação, implementado por toda a hierarquia \texttt{Player}:
+\begin{lstlisting}[style=javastyle]
+interface Typeable {
+  void processInput(char c)
+      throws InvalidInputException;
+  boolean isFinished();
+  double getProgress(); // 0.0-1.0
+  double getWPM();
+  double getAccuracy(); // 0-100
+}
+\end{lstlisting}
+
+\columnbreak
+\textbf{\texttt{Persistable}} — contrato de serialização, implementado por \texttt{RaceResult} e \texttt{RaceResultManager}:
+\begin{lstlisting}[style=javastyle]
+interface Persistable {
+  String serialize();
+  void deserialize(String data)
+      throws FileLoadException;
+}
+\end{lstlisting}
+\end{multicols}
+
+% ==================================================================
+\section*{5. Exceções Próprias}
+
+Pacote \texttt{com.tuiperacer.exception} — distingue exceções \emph{checked} e \emph{unchecked}:
+
+\begin{table}[H]
+\centering\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Exceção} & \textbf{Tipo} & \textbf{Quando é lançada} \\
+\midrule
+\texttt{FileLoadException}          & Checked & Falha na leitura de arquivo de texto ou histórico \\
+\texttt{PlayerNotFoundException}    & Checked & Busca de jogador inexistente na corrida \\
+\texttt{DuplicatePlayerException}   & Checked & Nome de jogador duplicado ao adicionar \\
+\texttt{ConnectionException}        & Checked & Falha na conexão TCP \\
+\texttt{InvalidTextException}       & Checked & Texto da corrida vazio ou inválido \\
+\texttt{RaceAlreadyStartedException}& Runtime & Modificação de corrida em andamento \\
+\texttt{InvalidInputException}      & Runtime & Caractere digitado diferente do esperado \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ==================================================================
+\section*{6. Fluxo de Exceção entre Camadas}
+
+\textbf{Cenário:} usuário inicia corrida sem definir texto. A exceção percorre três camadas:
+
+\begin{enumerate}[leftmargin=*, itemsep=2pt, topsep=2pt]
+    \item \textbf{Model} — \texttt{Race.start()} detecta texto vazio e lança \texttt{InvalidTextException}.
+    \item \textbf{Service} — \texttt{RaceService.startRace()} propaga a exceção (declarada em assinatura).
+    \item \textbf{View} — \texttt{SetupController} captura e exibe \texttt{Alert} ao usuário:
+\end{enumerate}
+
+\begin{lstlisting}[style=javastyle]
+// Race.java (Model)
+public void start() throws InvalidTextException {
+    if (text == null || text.isBlank())
+        throw new InvalidTextException("Texto nao pode ser vazio.");
+    state = RaceState.RUNNING;
+}
+
+// SetupController.java (View)
+try {
+    raceService.startRace();          // Service propaga
+    navigateToRace();
+} catch (InvalidTextException e) {
+    new Alert(Alert.AlertType.ERROR, "Defina um texto para a corrida.").show();
+}
+\end{lstlisting}
+
+% ==================================================================
+\section*{7. Coleções Utilizadas}
+
+\begin{table}[H]
+\centering\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Coleção} & \textbf{Local} & \textbf{Finalidade} \\
+\midrule
+\texttt{ArrayList<Player>}                      & \texttt{Race}            & Lista polimórfica de jogadores \\
+\texttt{ArrayList<PlayerResult>}                & \texttt{RaceResult}      & Resultados individuais da corrida \\
+\texttt{ArrayList<RaceResult>}                  & \texttt{RaceResultManager} & Histórico persistido em arquivo \\
+\texttt{ArrayList<LobbyEntry>}                  & \texttt{LobbyService}    & Lobbies online disponíveis \\
+\texttt{ConcurrentHashMap<Integer,ClientHandler>} & \texttt{RaceServer}    & Clientes TCP thread-safe \\
+\texttt{HashMap<String,PlayerPane>}             & \texttt{RaceController}  & Lookup de painel UI por nome \\
+\texttt{ConcurrentLinkedQueue<RemoteChar>}      & \texttt{RaceController}  & Fila não-bloqueante de eventos de rede \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+O \texttt{ArrayList<Player>} em \texttt{Race} é central: permite iterar polimorficamente sobre todos os tipos de jogador. O \texttt{ConcurrentLinkedQueue} desacopla a thread de rede do \texttt{AnimationTimer} JavaFX sem bloqueios.
+
+% ==================================================================
+\section*{8. Interface Gráfica}
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.48\textwidth}
+    \centering
+    \fbox{\includegraphics[width=\textwidth,height=3.5cm,keepaspectratio]{screen_menu.png}}
+    \caption*{\small Menu Principal}
+\end{minipage}\hfill
+\begin{minipage}{0.48\textwidth}
+    \centering
+    \fbox{\includegraphics[width=\textwidth,height=3.5cm,keepaspectratio]{screen_setup.png}}
+    \caption*{\small Configuração de Corrida}
+\end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.48\textwidth}
+    \centering
+    \fbox{\includegraphics[width=\textwidth,height=3.5cm,keepaspectratio]{screen_race.png}}
+    \caption*{\small Corrida em Andamento}
+\end{minipage}\hfill
+\begin{minipage}{0.48\textwidth}
+    \centering
+    \fbox{\includegraphics[width=\textwidth,height=3.5cm,keepaspectratio]{screen_results.png}}
+    \caption*{\small Tela de Resultados}
+\end{minipage}
+\end{figure}
+
+\end{document}
